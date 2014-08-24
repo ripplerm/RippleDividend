@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Ripple Dividend Memos</title>
+    <script src="http://cdn.jsdelivr.net/ripple/0.7.30/ripple-lib-min.js"></script>
+    <script>
+
+// Loading ripple-lib in a webpage
+var Remote = ripple.Remote;
+var Utils = ripple.utils;
+
+var remote = new Remote({
+    // see the API Reference for available options
+    trusted:        false,
+    local_signing:  true,
+    local_fee:      true,
+    fee_cushion:     1.5,
+    servers: [
+        {
+            host:    's1.ripple.com'
+            , port:    443
+            , secure:  true
+        }
+    ]
+});
+
+function output(inp) {
+    document.body.appendChild(document.createElement('pre')).innerHTML = inp;
+}
+
+window.onload = function() {
+    var submitbutton = document.getElementById('submitbutton');
+    submitbutton.onclick = function() {submittoserver();};
+}
+
+function submittoserver() {
+
+    var TX_HASH = document.getElementById('txhash').value;
+
+    output("connecting to server...");
+
+    remote.connect(function() {
+	  output('connected to Ripple-Network.')
+
+	  var request = remote.request_tx(TX_HASH);
+	  request.callback(function(err, res) {  
+
+            if (err) {
+              output(err.remote.error_message); 
+            }
+
+            if (res) {
+              if (res.Memos) {
+                 //output('Sender: ' + res.Account);
+                 //output('Recipient: ' + res.Destination);
+                 var memos = res.Memos;
+                 for (var memo in memos) {
+                   var mType = Utils.hexToString(memos[memo].Memo.MemoType);
+                   var mData = Utils.hexToString(memos[memo].Memo.MemoData);
+                   try {
+                       mData = JSON.stringify(JSON.parse(mData), null, '\t');
+                   } catch (e) {};
+                   output('MemoData: ' + mData); 
+                 }
+              } else {
+                 output('No memos in this transaction.');
+              }   
+            }  
+
+	    remote.disconnect();
+	  });
+	  //request.request();
+
+    });
+}
+
+    </script>
+  </head>
+  <body>
+    <h1>Retrieving RippleDividend's Memos</h1>
+    Tx hash:
+    <input id="txhash" type=text
+           value="5156C4B658FD8F178255A67E2EE97DFEE2963CF6B215515BF758E64851362000" size=80><br>
+    <button id="submitbutton">Retrieve</button><br><br>
+
+  </body>
+</html>
