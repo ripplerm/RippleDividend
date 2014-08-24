@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Asset Valuation for Ripple Dividend's Fund</title>
+    <script src="ripple-0.7.35-min.js"></script>
+    <script>
+
+var Remote = ripple.Remote;
+var Amount = ripple.Amount;
+
+var RIPPLE_WS = "wss://s1.ripple.com"
+
+// =========== configuration & Global variables =======================
+
+var ASSET = ""; 
+var RANGE = '';
+var COLDWALLET = '';
+var HOTWALLET = '';
+
+var LIST_ALL = true;
+var RATES_XRP = false;
+
+var remote = new Remote({
+  trusted:        false,
+  local_signing:  true,
+  local_fee:      true,
+  fee_cushion:     1.5,
+  max_fee:          50,
+  max_listeners:    30,
+  servers: [
+    {
+        host:    's1.ripple.com'
+      , port:    443
+      , secure:  true
+    },
+    {
+        host:    's-east.ripple.com'
+      , port:    443
+      , secure:  true
+    },
+    {
+        host:    's-west.ripple.com'
+      , port:    443
+      , secure:  true
+    }
+  ]
+});
+
+var GATEWAYS = 
+   {
+      rvYAfWj5gh67oV6fW32ZzP3Aw4Eubs59B: "BitStamp",
+      rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q: "SnapSwap",
+      razqQKzJRdB4UxFPWf5NEpEG3WMkmwgcXA: "RippleChina",
+      rnuF96W4SZoCJmbHYBFoJZpR8eCaxNvekK: "RippleCN",
+      rJHygWcTLVpSXkowott6kzgZU6viQSVYM1: "JustCoin",
+      rLEsXccBGNR3UPuPu2hUXPjziKC3qKSBun: "TheRockTrading",
+      r9Dr5xwkeLegBeXq6ujinjSBLQzQ1zQGjH: "RippleSingapore",
+      rfYv1TXnwgDDK4WQNbFALykYuEBnrR4pDX: "DividendRippler",
+      rMAz5ZnK73nyNUL4foAvaxdreczCkG3vA6: "RippleTradeJapan",
+      rNPRNzBB92BVpAhhZr4iXDTveCgV5Pofm9: "RippleIsrael",
+      r3ADD8kXSUKHd6zTCKfnKT3zV9EZHjzp1S: "RippleUnion",
+      rPKSvQ1qFAksr7hzk2wC2xtqSqFbxP3wvg: "NoFiatCoin",
+      rKiCet8SdvWxPXnAgYarFUXMh1zCPz432Y: "RippleFox",
+      rsP3mgGb2tcYUrxiLFiHJiQXhsziegtwBc: "Coinex",
+      rG6FZ31hDHN1K5Dkbma3PSB5uVCuVVRzfn: "Bitso",
+    }
+
+var FUNDS = {
+              FMM: { 
+                     issuer: "rDVdJ62foD1sn7ZpxtXyptdkBSyhsQGviT",
+                     hotwallet: "rDVDMugV7vKvDxPg9DhJjVobb7qF918p4k",
+                     trading_accounts: {
+                                         "rDVfEiHtQJ3H1Vk6uB8RnhasbkGb74ar9c": 'FMM_Trading(1)', 
+                                         "rDVMxgwAd1ofsSLAzcRZfeEUUw8dFRYZJ8": 'FMM_Trading(2)', 
+                                         "rDVMwT52pbcPtwZefB9vsYza4VDK6ibPUc": 'FMM_Trading(3)'
+                                       },
+                     pegged_iou: { currency: 'CNY', issuer: 'rnuF96W4SZoCJmbHYBFoJZpR8eCaxNvekK' },
+                     pegged_iou_name: 'CNY.RippleCN',
+                     unit_circulate: 0,
+                     assets: {  
+                                USD:{}, 
+                                CNY:{}, 
+                                JPY:{}, 
+                                EUR:{} 
+                              },
+                   },
+              BTC: { 
+                     issuer: "rDVdJ62foD1sn7ZpxtXyptdkBSyhsQGviT",
+                     hotwallet: "rDV1q4Urtve3kGZHLaoDt3XVZns6C6DDG5",
+                     trading_accounts: {
+                                         "rDVbebHPL2Wk3V35uvhvDDgxdoHpqbaQHr":'BTC_Trading(1)', 
+                                         "rDVtU69hcLPjYsR1eJXnGSR8Mf6HHHfENj":'BTC_Trading(2)'
+                                       },
+                     pegged_iou: { currency: 'BTC', issuer: 'rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q' },
+                     pegged_iou_name: 'BTC.SnapSwap',
+                     unit_circulate: 0,
+                     assets: {  
+                                BTC:{}, 
+                              },
+                     single: true
+                   },
+              CNY: { 
+                     issuer: "rDVdJ62foD1sn7ZpxtXyptdkBSyhsQGviT",
+                     hotwallet: "rDV1q4Urtve3kGZHLaoDt3XVZns6C6DDG5",
+                     trading_accounts: {
+                                         "rDVNvrRuSUgGN6oKpHVHodXAxNWYnyycBm": 'CNY_Trading(2)', 
+                                         "rDVYWLMhTP6rjL93LsTGZXCyM5vwZrPK9F": 'CNY_Trading(3)'
+                                       },
+                     pegged_iou: { currency: 'CNY', issuer: 'rnuF96W4SZoCJmbHYBFoJZpR8eCaxNvekK' },
+                     pegged_iou_name: 'CNY.RippleCN',
+                     unit_circulate: 0,
+                     assets: {  
+                                CNY:{}, 
+                              },
+                     single: true
+                   },
+              USD: { 
+                     issuer: "rDVdJ62foD1sn7ZpxtXyptdkBSyhsQGviT",
+                     hotwallet: "rDV1q4Urtve3kGZHLaoDt3XVZns6C6DDG5",
+                     trading_accounts: {
+                                         "rDVUfm8DeyZR5xtXHQr9e5h3CnWz58E3F4":'USD_Trading(1)', 
+                                         "rDVS7D6Fte8BUNmEyEKo9GBEgg5EZa6RUJ":'USD_Trading(2)'
+                                       },
+                     pegged_iou: { currency: 'USD', issuer: 'rMwjYedjc7qqtKYVLiAccJSmCwih4LnE2q' },
+                     pegged_iou_name: 'USD.SnapSwap',
+                     unit_circulate: 0,
+                     assets: {  
+                                USD:{}, 
+                              },
+                     single: true
+                   },
+            }  
+
+var RATES = { }
+
+var NAV = 0;
+var TOTAL_ASSET = 0;
+var BALANCE_UPDATE = {};
+
+
+// ========================================================
+
+function GatewayName (account) {
+  if (account == null) { return ''; }
+  if (GATEWAYS.hasOwnProperty(account)) { return GATEWAYS[account];} 
+  else { return account; }
+}
+
+
+function rates_updated_clear() {
+    RATES = {};
+    for(var currency in FUNDS[ASSET].assets){
+        RATES[currency] = {};
+        for (var issuer in FUNDS[ASSET].assets[currency]) {
+          RATES[currency][issuer] = { updated: false };
+          if (currency == FUNDS[ASSET].pegged_iou.currency && issuer == FUNDS[ASSET].pegged_iou.issuer && !RATES_XRP) {
+             RATES[currency][issuer] = { value: 1, updated: true }; 
+          }
+        }   
+    }
+}
+
+function rates_updated () {
+  var updated = true;
+  var non_updated = '';
+  for (var currency in RATES) {
+    for (var issuer in RATES[currency]) {
+      if (RATES[currency][issuer].updated == false) {
+        updated = false;
+        non_updated = non_updated + ', ' + currency + '.' + GatewayName(issuer);
+      }
+    }
+  }
+  if (updated) {
+    output('All Rates updated.');
+  } else {
+    output('Failed to get Exchange-rates for: ' + non_updated + ' from RippleCharts.');
+  }
+  return updated;  
+}
+
+function get_rates(opts, callback) {
+  var range = opts.range;
+  var asset = opts.asset;
+  output('-----------------------------------------------');
+  output('getting exchange-rates(1-' + RANGE + ' Average) from RippleCharts...');
+
+  rates_updated_clear();
+
+  var counter = FUNDS[asset].pegged_iou;
+  if (RATES_XRP) { counter = {currency: 'XRP', issuer: null} }
+
+  var pairs = [];
+  for(var currency in FUNDS[asset].assets){
+      for (var issuer in FUNDS[asset].assets[currency]) {
+          if (!RATES_XRP && currency == counter.currency && issuer == counter.issuer) {continue;};
+          var base = { currency: currency, issuer: issuer };
+          pairs.push({base: base, counter: counter});  
+      }
+  } 
+
+  var BODY = { pairs: pairs, range: range };
+
+  var Request = new XMLHttpRequest();
+
+  Request.open('POST', 'http://api.ripplecharts.com/api/exchangerates');
+  Request.setRequestHeader('Content-Type', 'application/json');
+  Request.onreadystatechange = function () {
+    if (this.readyState === 4) {
+      var body = JSON.parse(this.responseText);
+      if (body.error) {
+        output('rippledata error: ' + body.error);
+      }
+  
+      for (var pair in body) {
+          if (body[pair].base && body[pair].rate) {
+            var currency = body[pair].base.currency;
+            var issuer = body[pair].base.issuer;
+            var rate = body[pair].rate;
+            var last = body[pair].last;
+            output('Exchange-Rate for ' + currency + '.' + GatewayName(issuer) + ' = ' + Number(rate).toPrecision(6) + ' ' + counter.currency + '.' + GatewayName(counter.issuer) );
+            RATES[currency][issuer].value = parseFloat(rate); 
+            RATES[currency][issuer].updated = true;
+          }
+      }
+       
+      if (rates_updated()) {
+          if (typeof(callback) == 'function') {
+            callback();
+          }
+      } 
+  
+    }
+  };
+  Request.send(JSON.stringify(BODY));
+  
+}
+
+function get_balance(opts, callback) {
+    var account = opts.account;
+    var ledger_index = opts.ledger_index;
+
+    function balance_update_clear(account) {
+          BALANCE_UPDATE = {};
+          if (Array.isArray(account)){
+             for (i = 0; i < account.length; i++) {
+                BALANCE_UPDATE[account[i]] = false;
+             }
+           } else {  
+                BALANCE_UPDATE[account] = false;
+           } 
+    }
+
+    function balance_clear() {
+        FUNDS[ASSET].unit_circulate = 0;
+        for(var currency in FUNDS[ASSET].assets){
+          FUNDS[ASSET].assets[currency] = {};
+        }
+    }
+
+    function balances_updated() {
+      for (var account in BALANCE_UPDATE) {
+        if (BALANCE_UPDATE[account] == false) {return false;}
+      }
+      return true;  
+    }
+
+    function set_command(ws_command,account){
+      var mycommand = { 
+                      "command": ws_command,
+                      "id": 0,
+                      "account": account,
+                      "ledger": ledger_index
+                    }
+      var subscribecommand = JSON.stringify(mycommand);
+      return subscribecommand;
+    }
+
+    balance_clear(account);
+    balance_update_clear(account);
+ 
+    var websocket = new WebSocket(RIPPLE_WS);
+
+    websocket.onopen = function(){
+          output('connected to ' + RIPPLE_WS + ', getting accounts balances...');
+          if (Array.isArray(account)){
+             for (i = 0; i < account.length; i++) {
+               websocket.send(set_command("account_lines",account[i]));
+             }
+           } else {  
+               websocket.send(set_command("account_lines",account));
+           }      
+    }
+
+    websocket.onerror = function(error){
+          output('ws error: ' + JSON.stringify(error, null, 2));
+    }
+
+     websocket.onmessage = function(message){
+          var msg = JSON.parse(message.data);
+          if (msg.status == 'success') {
+                if (msg.result.lines) {
+                  var ioulist = msg.result.lines;
+                  var account = msg.result.account;
+                  BALANCE_UPDATE[account] = true;
+                  ioustats(ioulist, account);
+                }
+          } else {output('wss error: ' + msg.error)}
+
+          if (balances_updated()){
+                if (typeof(callback) == 'function') {
+                  callback();
+                }              
+          }
+    }
+	
+}
+
+function ioustats(hlist, myaccount) {  
+       for (i = 0; i < hlist.length; i++) {
+           var account = hlist[i].account;
+           var currency = hlist[i].currency;
+           var balance = Number(hlist[i].balance);
+
+           if (myaccount == COLDWALLET && currency != ASSET) {
+             continue;    //ignore other ious issued by coldwallet.
+           }
+
+           if ( (currency == ASSET) && ( (myaccount == COLDWALLET) || (account == COLDWALLET) ) ) {
+               FUNDS[ASSET].unit_circulate = parseFloat(FUNDS[ASSET].unit_circulate) - parseFloat(balance);
+               continue;
+           }         
+           if (FUNDS[ASSET].assets.hasOwnProperty(currency)) {
+               if ( FUNDS[ASSET].assets[currency].hasOwnProperty(account) ) {
+                 FUNDS[ASSET].assets[currency][account] = parseFloat(FUNDS[ASSET].assets[currency][account]) + parseFloat(balance);
+               } else {
+                 FUNDS[ASSET].assets[currency][account] = parseFloat(balance);
+               } 
+               if (LIST_ALL) {
+                 output('In ' + AccountName(ASSET, myaccount) + ': ' + balance.toPrecision(6) + ' '+ currency + '.' + GatewayName(account) );
+               }
+           }  
+       }
+
+    function AccountName (asset, myaccount) {
+      if (myaccount == FUNDS[asset].hotwallet) { return 'Hotwallet'; }
+      for (var account in FUNDS[asset].trading_accounts) {
+        if (myaccount == account) { return FUNDS[asset].trading_accounts[account]; }
+      }
+      return myaccount;
+    }
+
+}
+
+
+function balancestats(opts, callback) {
+    var asset = opts.asset;
+    TOTAL_ASSET = 0;
+    TOTAL_ASSET_PAR = 0;
+
+    var counter_currency = 'XRP';
+    if (!RATES_XRP) { counter_currency = FUNDS[asset].pegged_iou_name; }
+    var peg = FUNDS[asset].pegged_iou;
+
+    output('==============  Assets Stats  ==================');    
+    for(var currency in FUNDS[asset].assets){
+      for (var issuer in FUNDS[asset].assets[currency]) {
+        //if (issuer == 'total') { continue; };
+        output(' [+] ' + FUNDS[asset].assets[currency][issuer].toPrecision(6) + ' ' + currency + '.' + GatewayName(issuer) + ' * ' + Number(RATES[currency][issuer].value).toPrecision(6) + ' = ' + (FUNDS[asset].assets[currency][issuer] * RATES[currency][issuer].value).toPrecision(6) + ' ' + counter_currency);
+        TOTAL_ASSET = TOTAL_ASSET + FUNDS[asset].assets[currency][issuer] * RATES[currency][issuer].value;
+        if (FUNDS[asset].single) {
+          TOTAL_ASSET_PAR = TOTAL_ASSET_PAR + FUNDS[asset].assets[currency][issuer];
+        }
+      }
+    }
+    if (RATES_XRP) { TOTAL_ASSET = TOTAL_ASSET / RATES[peg.currency][peg.issuer].value; }
+    NAV = TOTAL_ASSET / FUNDS[asset].unit_circulate;
+    NAV_PAR = TOTAL_ASSET_PAR / FUNDS[asset].unit_circulate;
+
+    output('------------------------------------------');
+    if (FUNDS[asset].single) {
+      output('Total Asset (PAR value) = ' + TOTAL_ASSET_PAR.toPrecision(6) + ' ' + FUNDS[asset].pegged_iou.currency);
+    }
+    output('Total Asset (market value) = ' + TOTAL_ASSET.toPrecision(6) + ' ' + FUNDS[asset].pegged_iou_name);
+    output('Unit-in-Circulation = ' + FUNDS[asset].unit_circulate + ' ' + asset );
+    output('NAV (market price) per Unit = ' + NAV + ' ' + FUNDS[asset].pegged_iou_name );
+    if (FUNDS[asset].single) {
+      output('NAV (at PAR) per Unit = ' + NAV_PAR + ' ' + FUNDS[asset].pegged_iou.currency );
+    }
+
+    if (typeof(callback) == 'function') {
+      callback({asset: asset, nav_market: NAV, nav_par: NAV_PAR});
+    }    
+}
+
+function recalculate(opts) {
+  var ledger_index = opts.ledger_index;
+  var range = opts.range;
+  var asset = opts.asset;
+
+  var coldwallet = FUNDS[asset].issuer;
+  var hotwallet = FUNDS[asset].hotwallet;
+  var trading_accounts = FUNDS[asset].trading_accounts;
+
+  COLDWALLET = coldwallet;
+  HOTWALLET = hotwallet;
+  var accounts = [COLDWALLET, HOTWALLET];
+  for (var account in trading_accounts) {
+    accounts.push(account);
+  }
+
+      get_balance({account: accounts, ledger_index: ledger_index}, function () {   
+          get_rates({asset: asset, range: range}, function () {
+              balancestats({asset: asset}, function (opts) {
+                  show_nav(opts)
+              });              
+          });
+      });
+
+}
+
+
+// ============= main =======================================
+
+function output(inp) {
+    document.getElementById('consolelog').appendChild(document.createElement('pre')).innerHTML = inp;
+}
+
+function clear_output() {
+  document.getElementById('consolelog').innerHTML = '';
+  document.getElementById('nav_market').innerHTML = '<em>calculating...</em>';
+  document.getElementById('nav_par').innerHTML = '';
+}
+
+
+window.onload = function() {
+    var submitbutton = document.getElementById('submitbutton');
+    submitbutton.onclick = function() {start();};
+
+    var assets = document.getElementsByName('asset');
+    for (var i = 0; i < assets.length; i++) {
+        assets[i].onclick = function() { show_accounts();  }
+    }
+
+}
+
+function show_nav(opts) {
+   var nav_par = opts.nav_par;
+   var nav_market = opts.nav_market;
+   var asset = opts.asset;
+   document.getElementById('nav_market').innerHTML = nav_market.toFixed(5) + ' ' + FUNDS[asset].pegged_iou_name;
+   if (nav_par) { document.getElementById('nav_par').innerHTML = nav_par.toFixed(5) + ' ' + FUNDS[asset].pegged_iou_name; }
+}
+
+function show_accounts(asset) {
+   document.getElementById('hotwallet').innerHTML = '<br>' + FUNDS[get_asset()].hotwallet;  
+   document.getElementById('trade_account').innerHTML = '';
+   for (var account in FUNDS[get_asset()].trading_accounts) {  
+     document.getElementById('trade_account').innerHTML += '<br>' + account; 
+   }
+}
+
+function get_asset () {
+    var assets = document.getElementsByName('asset');
+    for (var i = 0; i < assets.length; i++) {
+        if (assets[i].checked) {
+          return assets[i].value;
+        }
+    }
+}
+
+function get_range () {
+    var ranges = document.getElementsByName('range');
+    for (var i = 0; i < ranges.length; i++) {
+        if (ranges[i].checked) {
+          return ranges[i].value;
+        }
+    }
+}
+
+function get_rates_route () {
+    var route = document.getElementsByName('rates_xrp');
+    for (var i = 0; i < route.length; i++) {
+        if (route[i].checked) {
+          return route[i].value;
+        }
+    }
+}
+
+function set_params() {
+    ASSET = get_asset();
+    RANGE = get_range();
+    RATES_XRP = (get_rates_route () == 1);
+}
+
+function start() {
+  clear_output();
+  set_params();
+  recalculate({asset: ASSET, range: RANGE, ledger_index: 'validated'});
+}
+
+    </script>
+  </head>
+  <body>
+    <h1>Asset Valuation for Ripple Dividend's Funds</h1>   
+
+    Select a Fund: <br>
+    <input id="asset_FMM" type=radio name="asset" value='FMM' checked>FMM. 
+    <input id="asset_BTC" type=radio name="asset" value='BTC' unchecked>BTC 
+    <input id="asset_CNY" type=radio name="asset" value='CNY' unchecked>CNY. 
+    <input id="asset_USD" type=radio name="asset" value='USD' unchecked>USD. 
+    <br><br>
+    Exchange-Rates Options: (Data from RippleCharts.com) <br>
+    <input id="range_day" type=radio name="range" value='day' checked>1-day average rates. 
+    <input id="range_week" type=radio name="range" value='week' unchecked>1-week average rates. 
+    <br><br>
+    <input id="rates_xrp_false" type=radio name="rates_xrp" value=0 checked>Direct-Market Rates (vs pegged_currency). 
+    <input id="rates_xrp_true" type=radio name="rates_xrp" value=1 unchecked>Rates through XRP markets. 
+    <br>
+    <br>
+    <button id="submitbutton">Calculate</button><br>
+    <br>
+    <div id='accounts'> 
+      <strong>Hotwallet: </strong>
+        <label id="hotwallet" type=text><br>rDVDMugV7vKvDxPg9DhJjVobb7qF918p4k</label><br><br>
+      <strong>Trading Acc: </strong>
+       <label id="trade_account" type=text>
+         <br>rDVfEiHtQJ3H1Vk6uB8RnhasbkGb74ar9c
+         <br>rDVMxgwAd1ofsSLAzcRZfeEUUw8dFRYZJ8
+         <br>rDVMwT52pbcPtwZefB9vsYza4VDK6ibPUc</label><br>
+    </div>
+    <br>
+    <div id='nav'> 
+      <strong>NAV per unit (market value) = <label id="nav_market" type=text></label> </strong><br>
+      <strong>NAV per unit (PAR value) = <label id="nav_par" type=text></label> </strong><br>
+    </div>
+    <br>
+    ============================================================= 
+    <br>
+    <strong>Log:</strong>
+    <div id='consolelog'> </div>
+  </body>
+</html>
