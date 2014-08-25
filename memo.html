@@ -53,7 +53,7 @@ function submittoserver() {
             if (res) {
               if (res.Memos) {
                  //output('Sender: ' + res.Account);
-                 //output('Recipient: ' + res.Destination);
+                 output('Recipient: ' + res.Destination);
                  var memos = res.Memos;
                  for (var memo in memos) {
                    var mType = Utils.hexToString(memos[memo].Memo.MemoType);
