@@ -329,7 +329,7 @@ function get_balance(opts, callback) {
           FUNDS[ASSET].risk_reserve = xrphuman;
           BALANCE_UPDATE[account] = true;
           if (LIST_ALL) {
-            output('In Reserves Account: ' + xrphuman.toPrecision(6) + 'XRP.');
+            output('In Reserves Account: ' + xrphuman.toPrecision(6) + ' XRP.');
           }
           if (balances_updated()) callback();
       }    
@@ -471,6 +471,7 @@ function clear_output() {
   document.getElementById('nav_market').innerHTML = '<em>calculating...</em>';
   document.getElementById('nav_par').innerHTML = '';
   document.getElementById('reserve').innerHTML = '';
+  document.getElementById('unit_in_circulation').innerHTML = '';
 }
 
 
@@ -495,6 +496,7 @@ function show_nav(opts) {
    document.getElementById('nav_market').innerHTML = nav_market.toFixed(5) + ' ' + FUNDS[asset].pegged_iou_name;
    if (nav_par) { document.getElementById('nav_par').innerHTML = nav_par.toFixed(5) + ' ' + FUNDS[asset].pegged_iou_name; }
    document.getElementById('reserve').innerHTML = reserve_xrp.toFixed(5) + ' XRP  = ' + reserve_nominal.toFixed(5) + ' ' + FUNDS[asset].pegged_iou_name;
+   document.getElementById('unit_in_circulation').innerHTML = FUNDS[asset].unit_circulate.toPrecision(5) + ' ' + asset;
 }
 
 function show_accounts(asset) {
@@ -586,9 +588,11 @@ function start() {
       <strong>NAV per unit (PAR value) = <label id="nav_par" type=text></label> </strong><br>
       <br>
     </div>
-    <div id='nav'>  
+ 
       <strong>Reserve per unit = <label id="reserve" type=text></label> </strong><br>
-    </div>
+      <br>
+      <strong>Unit in Circulation = <label id="unit_in_circulation" type=text></label> </strong><br>
+
     <br>
     ============================================================= 
     <br>
