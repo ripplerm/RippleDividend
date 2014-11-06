@@ -26,12 +26,16 @@ var remote = new Remote({
 });
 
 function output(inp) {
-    document.body.appendChild(document.createElement('pre')).innerHTML = inp;
+    document.getElementById('log').appendChild(document.createElement('pre')).innerHTML = inp;
+}
+
+function clear_log() {
+  document.getElementById('log').innerHTML = '';
 }
 
 window.onload = function() {
     var submitbutton = document.getElementById('submitbutton');
-    submitbutton.onclick = function() {submittoserver();};
+    submitbutton.onclick = function() {clear_log(); submittoserver();};
 }
 
 function submittoserver() {
@@ -52,15 +56,16 @@ function submittoserver() {
 
             if (res) {
               if (res.Memos) {
-                 //output('Sender: ' + res.Account);
+                 output('Sender: ' + res.Account);
                  output('Recipient: ' + res.Destination);
                  var memos = res.Memos;
                  for (var memo in memos) {
                    var mType = Utils.hexToString(memos[memo].Memo.MemoType);
                    var mData = Utils.hexToString(memos[memo].Memo.MemoData);
                    try {
-                       mData = JSON.stringify(JSON.parse(mData), null, '\t');
+                       mData = JSON.stringify(JSON.parse(mData), null, 2);
                    } catch (e) {};
+                   output('MemoType: ' + mType);
                    output('MemoData: ' + mData); 
                  }
               } else {
@@ -80,9 +85,9 @@ function submittoserver() {
   <body>
     <h1>Retrieving RippleDividend's Memos</h1>
     Tx hash:
-    <input id="txhash" type=text
-           value="5156C4B658FD8F178255A67E2EE97DFEE2963CF6B215515BF758E64851362000" size=80><br>
+    <input id="txhash" type=text value="" size=80><br><br>
     <button id="submitbutton">Retrieve</button><br><br>
-
+    =============================================================
+    <div id='log'> </div>
   </body>
 </html>
