@@ -335,14 +335,28 @@ function get_balance(opts, callback) {
       }    
     });
 
+    var account_lines = {};
+
     for (var i=0; i < account.length; i++) {
-      remote.requestAccountLines(account[i], function (err, res) {
+      remote.requestAccountLines(account[i], function handle_lines(err, res) {
         if (err) {output('Error requesting account_lines:' + err) } 
         else if (res) {
            var ioulist = res.lines;
            var account = res.account;
+           var marker = res.marker;
+
+           if (!account_lines.hasOwnProperty(account)) account_lines[account] = [];
+           account_lines[account] = account_lines[account].concat(ioulist);
+
+           if (marker) {
+               this.requested = false;
+               this.message.marker = marker;
+               this.callback(handle_lines);
+               return;  
+           }
+
            BALANCE_UPDATE[account] = true;
-           ioustats(ioulist, account);          
+           ioustats(account_lines[account], account);          
            if (balances_updated()) callback(); 
         }
       });
@@ -548,7 +562,13 @@ function start() {
   remote.connect(function () {
     output('connected to Ripple Network.');
   });
-  recalculate({asset: ASSET, range: RANGE, ledger_index: 'validated'});
+  remote.requestLedgerHash(function (err, res){
+    if (err) output('Fail to get ledgerhash.');
+    if (res) {
+      output('Last_closed ledger: ' + res.ledger_index);
+      recalculate({asset: ASSET, range: RANGE, ledger_index: res.ledger_index, ledger_hash: res.ledger_hash});
+    }
+  });
 }
 
     </script>
