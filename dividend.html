@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Dividend History</title>
+    <script src="ripple-0.7.35-min.js"></script>
+    <script>
+
+// Loading ripple-lib in a webpage
+var Remote = ripple.Remote;
+var Utils = ripple.utils;
+var UInt160 = ripple.UInt160;
+
+var remote = new Remote({
+    // see the API Reference for available options
+    trusted:        false,
+    local_signing:  true,
+    local_fee:      true,
+    fee_cushion:     1.5,
+    servers: [
+        {
+            host:    's1.ripple.com'
+            , port:    443
+            , secure:  true
+        }
+    ]
+});
+
+var MY_ADDRESS, MY_FUND;
+
+var LEDGER_MIN = 8120000;
+var LEDGER_MAX = -1;
+
+var DIVIDEND_ACCOUNTS = [
+      "rDViq9gWH7ZpJgqfjPTDxFN9TvVZ1j1Yju",  //ALL
+      "rDiF2SV4YR61qDaGNiGnA6ZKMQpxgg1HWt",  //FMM
+      "rDiFnkZGuh1fUE5L7Enn5izv8rE5L1WPMh",  //FBM
+      "rDibzy8eMpBVZLZyn6XrwYKvP5dwZyayFS",  //BTC
+      "rDicHqREJ5bvevA9LTU3gqV3jpW9Qx11iv",  //CNY
+      "rDiui2wxBqjmeWpSUfuDYYJzjgPAF8q11i",  //USD
+]
+
+// ============================================================================================
+
+var Transactions = [];
+
+function request_tx () {
+   if (!remote._connected) return remote.once('connected', request_tx);
+
+   var options = {
+                    account: MY_ADDRESS,
+                    ledger_index_min: LEDGER_MIN,
+                    ledger_index_max: -1,
+                    limit: 100,
+                 }
+
+   Transactions = [];
+   var page_num = 0;
+
+   output('requesting account transaction history.....')
+   remote.requestAccountTx(options, function handle_txn(err, res){
+     if (err) {output('Error requesting transaction history: ' + err) }  
+     else if (res) {
+         var txs = res.transactions;
+         var marker = res.marker;
+         
+         Transactions = Transactions.concat(txs);
+
+         if (marker) {
+             page_num++;
+             output('page ' + page_num + ' marker: ' + marker.ledger)
+             output('requesting next_page...')
+             this.requested = false;
+             this.message.marker = marker;
+             this.callback(handle_txn);
+             return;  
+         }                     
+         show_dividend();         
+     }
+   });   
+}
+
+
+function show_dividend() {
+   clear_log();
+   output('record_ledger \t timestamp \t\t Fund \t unit_held \t dividend(XRP) \t return_rate \t exchange_rate \t txHash')  
+   var num = 0;
+   for (i = 0; i < Transactions.length; i++) {
+     var tx = Transactions[i].tx;
+     if (DIVIDEND_ACCOUNTS.indexOf(tx.Account) < 0) continue;  //filter payments from RippleDividend only.
+     var mData = JSON.parse(Utils.hexToString(tx.Memos[0].Memo.MemoData));
+     var fund = mData.fund || mData.asset; 
+     if (fund != MY_FUND) continue; // filtering with fund name
+     var amount = tx.Amount / 1000000; 
+     var record_ledger = mData.record_ledger;
+     var timestamp = mData.record_ledger_timestamp;
+     var nominal_currency = mData.nominal_currency;
+     var nominal_rate = Number(mData.nominal_rate);
+     var exchange_rate = Number(mData.exchange_rate);
+     var holder_balance = Number(mData.holder_balance);     
+     
+     if (nominal_rate < 0) nominal_rate = 0;
+     output(record_ledger + '\t\t ' + timestamp + '\t ' + fund + '\t ' + holder_balance.toFixed(5) + '\t ' + amount.toFixed(5) + '\t ' + (nominal_rate * 100).toFixed(4) + ' %  \t ' + exchange_rate.toPrecision(5) + '\t\t ' + tx.hash)   
+     num++;
+   }
+   output ('Number of dividend = ' + num);
+}
+
+
+// ============================================================================================
+function output(inp) {
+    document.getElementById('log').appendChild(document.createElement('pre')).innerHTML = inp;
+}
+
+function clear_log() {
+  document.getElementById('log').innerHTML = '';
+}
+
+window.onload = function() {
+    var submitbutton = document.getElementById('submitbutton');
+    submitbutton.onclick = function() {clear_log(); submittoserver();};
+
+    var funds = document.getElementsByName('funds');
+    for (var i = 0; i < funds.length; i++) {
+        funds[i].onclick = function() { 
+           MY_FUND = get_fund(); 
+           show_dividend();  
+        }
+    }
+
+    output("connecting to servers...");
+    remote.connect(function() {
+       output('connected.');
+    });
+}
+
+function get_fund () {
+    var funds = document.getElementsByName('funds');
+    for (var i = 0; i < funds.length; i++) {
+        if (funds[i].checked) {
+          return funds[i].value;
+        }
+    }
+}
+
+
+function submittoserver() {
+    MY_FUND = get_fund();
+    MY_ADDRESS = document.getElementById('my_address').value.trim();
+    LEDGER_MIN = Number(document.getElementById('ledger_min').value);
+    LEDGER_MAX = Number(document.getElementById('ledger_max').value);
+
+    if (LEDGER_MIN < 8120000) LEDGER_MIN = 8120000;
+    if (!UInt160.is_valid(MY_ADDRESS)) {
+        output("Error: invalid address");
+	return;
+    }
+    request_tx();
+}
+
+    </script>
+  </head>
+  <body>
+    <h1>Dividend History</h1>
+    Receiver Address:
+    <input id="my_address" type=text value="rUW1J87NxMyuacmyDyndmcMUAktUk98Sck" size=50><br><br>
+    ledger_min: <input id="ledger_min" type=text value=8120000 size=10> ledger_max: <input id="ledger_max" type=text value="-1" size=10><br><br>
+    <button id="submitbutton">Request</button><br><br>
+    Filter: 
+    <input id="FMM" type=radio name="funds" value='FMM' checked>FMM. 
+    <input id="FBM" type=radio name="funds" value='FBM' unchecked>FBM.
+    <input id="BTC" type=radio name="funds" value='BTC' unchecked>BTC. 
+    <input id="CNY" type=radio name="funds" value='CNY' unchecked>CNY. 
+    <input id="USD" type=radio name="funds" value='USD' unchecked>USD. 
+    <br><br>
+    =============================================================
+    <div id='log'> </div>
+  </body>
+</html>
