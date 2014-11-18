@@ -100,7 +100,7 @@ function show_dividend() {
      var holder_balance = Number(mData.holder_balance);     
      
      if (nominal_rate < 0) nominal_rate = 0;
-     output(record_ledger + '\t\t ' + timestamp + '\t ' + fund + '\t ' + holder_balance.toFixed(5) + '\t ' + amount.toFixed(5) + '\t ' + (nominal_rate * 100).toFixed(4) + ' %  \t ' + exchange_rate.toPrecision(5) + '\t\t ' + tx.hash)   
+     output(record_ledger + '  \t ' + timestamp + '\t ' + fund + '\t ' + holder_balance.toFixed(5) + '\t ' + amount.toFixed(5) + '\t ' + (nominal_rate * 100).toFixed(4) + ' %  \t ' + exchange_rate.toPrecision(5) + '\t\t ' + tx.hash)   
      num++;
    }
    output ('Number of dividend = ' + num);
