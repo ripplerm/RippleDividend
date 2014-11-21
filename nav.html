@@ -67,6 +67,7 @@ var GATEWAYS =
 var FUNDS = {
               FMM: { 
                      issuer: "rDVdJ62foD1sn7ZpxtXyptdkBSyhsQGviT",
+                     warmwallet: "rDVWVioZxWqnU1bEYm8fV1ShQy2jpndabE",
                      hotwallet: "rDVDMugV7vKvDxPg9DhJjVobb7qF918p4k",
                      trading_accounts: {
                                          "rDVfEiHtQJ3H1Vk6uB8RnhasbkGb74ar9c": 'FMM_Trading(1)', 
@@ -88,6 +89,7 @@ var FUNDS = {
                    },
               FBM: { 
                      issuer: "rDVdJ62foD1sn7ZpxtXyptdkBSyhsQGviT",
+                     warmwallet: "rDVWVioZxWqnU1bEYm8fV1ShQy2jpndabE",
                      hotwallet: "rDVMGYKJTZrnEAg7A7WDxUCFnu9Bx5LTqE",
                      trading_accounts: {
                                          "rDVBvAQScXrGRGnzrxRrcJPeNLeLeUTAqE": 'FBM_Trading(1)', 
@@ -108,6 +110,7 @@ var FUNDS = {
                    },
               BTC: { 
                      issuer: "rDVdJ62foD1sn7ZpxtXyptdkBSyhsQGviT",
+                     warmwallet: "rDVWVioZxWqnU1bEYm8fV1ShQy2jpndabE",
                      hotwallet: "rDV1q4Urtve3kGZHLaoDt3XVZns6C6DDG5",
                      trading_accounts: {
                                          "rDVbebHPL2Wk3V35uvhvDDgxdoHpqbaQHr":'BTC_Trading(1)', 
@@ -125,6 +128,7 @@ var FUNDS = {
                    },
               CNY: { 
                      issuer: "rDVdJ62foD1sn7ZpxtXyptdkBSyhsQGviT",
+                     warmwallet: "rDVWVioZxWqnU1bEYm8fV1ShQy2jpndabE",
                      hotwallet: "rDV1q4Urtve3kGZHLaoDt3XVZns6C6DDG5",
                      trading_accounts: {
                                          "rDVNvrRuSUgGN6oKpHVHodXAxNWYnyycBm": 'CNY_Trading(1)', 
@@ -142,6 +146,7 @@ var FUNDS = {
                    },
               USD: { 
                      issuer: "rDVdJ62foD1sn7ZpxtXyptdkBSyhsQGviT",
+                     warmwallet: "rDVWVioZxWqnU1bEYm8fV1ShQy2jpndabE",
                      hotwallet: "rDV1q4Urtve3kGZHLaoDt3XVZns6C6DDG5",
                      trading_accounts: {
                                          "rDVUfm8DeyZR5xtXHQr9e5h3CnWz58E3F4":'USD_Trading(1)', 
@@ -370,14 +375,15 @@ function ioustats(hlist, myaccount) {
            var currency = hlist[i].currency;
            var balance = Number(hlist[i].balance);
 
-           if (myaccount == COLDWALLET && currency != ASSET) {
-             continue;    //ignore other ious issued by coldwallet.
+           if (myaccount == WARMWALLET && currency != ASSET) {
+             continue;    //ignore other funds.
            }
 
            if ( (currency == ASSET) && ( (myaccount == COLDWALLET) || (account == COLDWALLET) ) ) {
                FUNDS[ASSET].unit_circulate = parseFloat(FUNDS[ASSET].unit_circulate) - parseFloat(balance);
                continue;
-           }         
+           }
+
            if (FUNDS[ASSET].assets.hasOwnProperty(currency)) {
                if ( FUNDS[ASSET].assets[currency].hasOwnProperty(account) ) {
                  FUNDS[ASSET].assets[currency][account] = parseFloat(FUNDS[ASSET].assets[currency][account]) + parseFloat(balance);
@@ -452,13 +458,17 @@ function recalculate(opts) {
   var asset = opts.asset;
 
   var coldwallet = FUNDS[asset].issuer;
+  var warmwallet = FUNDS[asset].warmwallet;
   var hotwallet = FUNDS[asset].hotwallet;
   var trading_accounts = FUNDS[asset].trading_accounts;
   var reserve_account = FUNDS[asset].reserve_account;
 
   COLDWALLET = coldwallet;
+  WARMWALLET = warmwallet;
   HOTWALLET = hotwallet;
-  var accounts = [COLDWALLET, HOTWALLET];
+
+  var accounts = [WARMWALLET, HOTWALLET];
+
   for (var account in trading_accounts) {
     accounts.push(account);
   }
