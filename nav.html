@@ -466,6 +466,8 @@ function ioustats(hlist, myaccount) {
            var currency = hlist[i].currency;
            var balance = Number(hlist[i].balance);
 
+           if (balance == 0) continue;
+
            if (myaccount == WARMWALLET && currency != ASSET) {
              continue;    //ignore other funds.
            }
