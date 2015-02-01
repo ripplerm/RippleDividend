@@ -66,6 +66,8 @@ var GATEWAYS =
       rrh7rf1gV2pXAoqA8oYbpHd8TKv5ZQeo67: "GBI",
       rwgR9gg18KgtGnDVZ4jDoukQ6y16isPixN: "Ripula",
       r94s8px6kSw1uZ1MV98dhSRTvc6VMPoPcN: "TokyoJPY",
+      r9ZFPSb1TFdnJwbTMYHvVwFK1bQPUCVNfJ: "RippleExchangeTokyo",
+      rJRi8WW24gt9X85PHAxfWNPCizMMhqUQwg: "RippleMarketJapan",
       rUkMKjQitpgAM5WTGk79xpjT38DEJY283d: "PaxMoneta",
     }
 
@@ -148,6 +150,24 @@ var FUNDS = {
                               },
                      risk_reserve: 0,
                      single: true
+                   },
+              JPY: { 
+                     issuer: "rDVdJ62foD1sn7ZpxtXyptdkBSyhsQGviT",
+                     warmwallet: "rDVWVioZxWqnU1bEYm8fV1ShQy2jpndabE",
+                     hotwallet: "rDV1q4Urtve3kGZHLaoDt3XVZns6C6DDG5",
+                     trading_accounts: {
+                                         "rDVJ8eNacPBYrAvD1eozMR9b9TDMa5aqYa":'Trading(1)', 
+                                       },
+                     reserve_account: "rDVjeuyz3j5wXnMU8xQhm6HgkirnyM1wq3",
+                     dividend_account: "rDijJVV3GXghq6cTVtRvzTr98xLfaW7QM5",
+                     pegged_iou: { currency: 'JPY', issuer: 'rMAz5ZnK73nyNUL4foAvaxdreczCkG3vA6' },
+                     pegged_iou_name: 'JPY.RippleTradeJapan',
+                     unit_circulate: 0,
+                     assets: {  
+                                JPY:{}, 
+                              },
+                     risk_reserve: 0,
+                     single: true,
                    },
               USD: { 
                      issuer: "rDVdJ62foD1sn7ZpxtXyptdkBSyhsQGviT",
@@ -689,7 +709,8 @@ function start() {
     <input id="asset_FMM" type=radio name="asset" value='FMM' checked>FMM. 
     <input id="asset_FBM" type=radio name="asset" value='FBM' unchecked>FBM.
     <input id="asset_BTC" type=radio name="asset" value='BTC' unchecked>BTC. 
-    <input id="asset_CNY" type=radio name="asset" value='CNY' unchecked>CNY. 
+    <input id="asset_CNY" type=radio name="asset" value='CNY' unchecked>CNY.
+    <input id="asset_JPY" type=radio name="asset" value='JPY' unchecked>JPY. 
     <input id="asset_USD" type=radio name="asset" value='USD' unchecked>USD. 
     <input id="asset_RXM" type=radio name="asset" value='RXM' unchecked>RXM. 
     <br><br>
